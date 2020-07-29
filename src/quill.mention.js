@@ -41,6 +41,13 @@ class Mention {
       blotName: "mention",
       dataAttributes: ["id", "value", "denotationChar", "link", "target"],
       linkTarget: "_blank",
+      multiList: false,
+      listHeader(item) {
+        return "";
+      },
+      footer() {
+        return "";
+      },
       onOpen() {
         return true;
       },
@@ -76,7 +83,10 @@ class Mention {
       ? this.options.mentionListClass
       : "";
     this.mentionContainer.appendChild(this.mentionList);
-
+    let footer = document.createElement("div");
+    footer.classList.add("ql-mention-footer");
+    footer.innerHTML = this.options.footer();
+    this.mentionContainer.appendChild(footer);
     this.quill.container.appendChild(this.mentionContainer);
 
     quill.on("text-change", this.onTextChange.bind(this));
@@ -172,21 +182,22 @@ class Mention {
     for (let i = 0; i < this.mentionList.childNodes.length; i += 1) {
       this.mentionList.childNodes[i].classList.remove("selected");
     }
-    this.mentionList.childNodes[this.itemIndex].classList.add("selected");
+    let el = this.mentionList.childNodes[this.itemIndex];
+    el.classList.add("selected");
 
     if (scrollItemInView) {
       const itemHeight = this.mentionList.childNodes[this.itemIndex]
         .offsetHeight;
-      const itemPos = this.itemIndex * itemHeight;
-      const containerTop = this.mentionContainer.scrollTop;
-      const containerBottom = containerTop + this.mentionContainer.offsetHeight;
+      const itemPos = el.offsetTop;
+      const containerTop = this.mentionList.scrollTop;
+      const containerBottom = containerTop + this.mentionList.offsetHeight;
 
       if (itemPos < containerTop) {
         // Scroll up if the item is above the top of the container
-        this.mentionContainer.scrollTop = itemPos;
+        this.mentionList.scrollTop = itemPos;
       } else if (itemPos > containerBottom - itemHeight) {
         // scroll down if any part of the element is below the bottom of the container
-        this.mentionContainer.scrollTop +=
+        this.mentionList.scrollTop +=
           itemPos - containerBottom + itemHeight;
       }
     }
@@ -201,9 +212,9 @@ class Mention {
       this.mentionList.childNodes[
         this.itemIndex
       ].dataset.value = `<a href="${link}" target=${itemTarget ||
-        this.options.linkTarget}>${
+      this.options.linkTarget}>${
         this.mentionList.childNodes[this.itemIndex].dataset.value
-      }`;
+        }`;
     }
     return this.mentionList.childNodes[this.itemIndex].dataset;
   }
@@ -266,6 +277,7 @@ class Mention {
   }
 
   onItemClick(e) {
+    console.log(e.target);
     e.preventDefault();
     e.stopImmediatePropagation();
     this.itemIndex = e.currentTarget.dataset.index;
@@ -284,7 +296,18 @@ class Mention {
           ? this.options.listItemClass
           : "";
         li.dataset.index = i;
-        li.innerHTML = this.options.renderItem(data[i], searchTerm);
+        if (data[i].listId && (i == 0 || data[i].listId != data[i - 1].listId)) {
+          let headerDiv = document.createElement("div");
+          headerDiv.innerHTML = this.options.listHeader(data[i]);
+          headerDiv.classList.add("ql-mention-list-item-header");
+          let contentDiv = document.createElement("div");
+          contentDiv.appendChild(headerDiv);
+          contentDiv.innerHTML += this.options.renderItem(data[i], searchTerm);
+          contentDiv.style.width = "100%";
+          li.appendChild(contentDiv);
+        } else {
+          li.innerHTML = this.options.renderItem(data[i], searchTerm);
+        }
         li.onmouseenter = this.onItemMouseEnter.bind(this);
         li.dataset.denotationChar = mentionChar;
         li.onclick = this.onItemClick.bind(this);
