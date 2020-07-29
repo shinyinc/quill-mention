@@ -277,7 +277,6 @@ class Mention {
   }
 
   onItemClick(e) {
-    console.log(e.target);
     e.preventDefault();
     e.stopImmediatePropagation();
     this.itemIndex = e.currentTarget.dataset.index;
