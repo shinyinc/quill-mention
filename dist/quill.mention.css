@@ -41,3 +41,6 @@
 .mention > span {
   margin: 0 3px;
 }
+.ql-mention-list-item-header{
+  margin-left: -5px;
+}

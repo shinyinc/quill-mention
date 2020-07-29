@@ -287,6 +287,13 @@ var Mention = /*#__PURE__*/function () {
       blotName: "mention",
       dataAttributes: ["id", "value", "denotationChar", "link", "target"],
       linkTarget: "_blank",
+      multiList: false,
+      listHeader: function listHeader(item) {
+        return "";
+      },
+      footer: function footer() {
+        return "";
+      },
       onOpen: function onOpen() {
         return true;
       },
@@ -316,6 +323,10 @@ var Mention = /*#__PURE__*/function () {
     this.mentionList = document.createElement("ul");
     this.mentionList.className = this.options.mentionListClass ? this.options.mentionListClass : "";
     this.mentionContainer.appendChild(this.mentionList);
+    var footer = document.createElement("div");
+    footer.classList.add("ql-mention-footer");
+    footer.innerHTML = this.options.footer();
+    this.mentionContainer.appendChild(footer);
     this.quill.container.appendChild(this.mentionContainer);
     quill.on("text-change", this.onTextChange.bind(this));
     quill.on("selection-change", this.onSelectionChange.bind(this));
@@ -401,20 +412,21 @@ var Mention = /*#__PURE__*/function () {
         this.mentionList.childNodes[i].classList.remove("selected");
       }
 
-      this.mentionList.childNodes[this.itemIndex].classList.add("selected");
+      var el = this.mentionList.childNodes[this.itemIndex];
+      el.classList.add("selected");
 
       if (scrollItemInView) {
         var itemHeight = this.mentionList.childNodes[this.itemIndex].offsetHeight;
-        var itemPos = this.itemIndex * itemHeight;
-        var containerTop = this.mentionContainer.scrollTop;
-        var containerBottom = containerTop + this.mentionContainer.offsetHeight;
+        var itemPos = el.offsetTop;
+        var containerTop = this.mentionList.scrollTop;
+        var containerBottom = containerTop + this.mentionList.offsetHeight;
 
         if (itemPos < containerTop) {
           // Scroll up if the item is above the top of the container
-          this.mentionContainer.scrollTop = itemPos;
+          this.mentionList.scrollTop = itemPos;
         } else if (itemPos > containerBottom - itemHeight) {
           // scroll down if any part of the element is below the bottom of the container
-          this.mentionContainer.scrollTop += itemPos - containerBottom + itemHeight;
+          this.mentionList.scrollTop += itemPos - containerBottom + itemHeight;
         }
       }
     }
@@ -508,7 +520,20 @@ var Mention = /*#__PURE__*/function () {
           var li = document.createElement("li");
           li.className = this.options.listItemClass ? this.options.listItemClass : "";
           li.dataset.index = i;
-          li.innerHTML = this.options.renderItem(data[i], searchTerm);
+
+          if (data[i].listId && (i == 0 || data[i].listId != data[i - 1].listId)) {
+            var headerDiv = document.createElement("div");
+            headerDiv.innerHTML = this.options.listHeader(data[i]);
+            headerDiv.classList.add("ql-mention-list-item-header");
+            var contentDiv = document.createElement("div");
+            contentDiv.appendChild(headerDiv);
+            contentDiv.innerHTML += this.options.renderItem(data[i], searchTerm);
+            contentDiv.style.width = "100%";
+            li.appendChild(contentDiv);
+          } else {
+            li.innerHTML = this.options.renderItem(data[i], searchTerm);
+          }
+
           li.onmouseenter = this.onItemMouseEnter.bind(this);
           li.dataset.denotationChar = mentionChar;
           li.onclick = this.onItemClick.bind(this);
