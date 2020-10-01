@@ -13,7 +13,7 @@
     "README.md"
   ],
   "dependencies": {
-    "quill": "^1.3.4"
+    "quill": "github:shinyinc/quill#custom-snow-theme"
   },
   "devDependencies": {
     "@ava/babel": "^0.4.0",
